@@ -1,4 +1,4 @@
-import { Search, Plus, MoreVertical } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { chatService } from '@/services/chatService';
@@ -10,7 +10,6 @@ interface TeamChatSidebarProps {
   filter: 'All' | 'Direct Messages' | 'Groups';
   setFilter: (val: 'All' | 'Direct Messages' | 'Groups') => void;
   activeTab: 'chats' | 'calls';
-  setActiveTab: (val: 'chats' | 'calls') => void;
   setIsGroupModalOpen: (val: boolean) => void;
   filteredItems: any[];
   workspaceId: string | undefined;
@@ -21,7 +20,7 @@ interface TeamChatSidebarProps {
 
 export function TeamChatSidebar({
   searchQuery, setSearchQuery, filter, setFilter,
-  activeTab, setActiveTab, setIsGroupModalOpen,
+  activeTab, setIsGroupModalOpen,
   filteredItems, workspaceId, roomId, user, callLogs
 }: TeamChatSidebarProps) {
   const navigate = useNavigate();

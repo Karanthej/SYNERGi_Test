@@ -6,7 +6,7 @@ import { workspaceService } from '@/services/workspaceService';
 import { useChatStore } from '@/store/useChatStore';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { 
-  Search, Hash, Phone, Video, MessageSquare, 
+  Search, Hash, Phone, MessageSquare, 
   Plus, MoreVertical
 } from 'lucide-react';
 import { CallOverlay } from '@/components/chat/CallOverlay';
@@ -61,7 +61,7 @@ export default function TeamChat() {
   const [newGroupName, setNewGroupName] = useState('');
   const [selectedMemberUuids, setSelectedMemberUuids] = useState<string[]>([]);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chats' | 'calls'>('chats');
+  const [activeTab] = useState<'chats' | 'calls'>('chats');
   
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -587,7 +587,6 @@ export default function TeamChat() {
         filter={filter}
         setFilter={setFilter}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
         setIsGroupModalOpen={setIsGroupModalOpen}
         filteredItems={filteredItems}
         workspaceId={workspaceId}

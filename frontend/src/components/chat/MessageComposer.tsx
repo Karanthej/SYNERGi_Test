@@ -11,6 +11,7 @@ interface MessageComposerProps {
   isSending?: boolean;
   disabled?: boolean;
   replyTo?: any; // To show reply preview above composer
+  editMode?: any;
   onCancelReply?: () => void;
   onCancelEdit?: () => void;
   placeholder?: string;
