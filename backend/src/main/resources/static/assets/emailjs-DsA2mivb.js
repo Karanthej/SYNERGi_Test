@@ -1,1 +1,0 @@
-import{t as e}from"./vendor-CPb2AjhK.js";var t=!1,n=()=>{t||=(e.init({publicKey:`Z_e1tdpc0pMZmMdbb`}),!0)},r=async(t,r,i)=>{n();try{let n={to_email:t,email:t,to_name:r,otp:i};return await e.send(`service_0z3k99j`,`template_qujtus5`,n),!0}catch{return!1}};export{r as t};

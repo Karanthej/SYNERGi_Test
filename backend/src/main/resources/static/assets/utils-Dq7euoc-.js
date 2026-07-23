@@ -1,1 +1,0 @@
-import{f as e,m as t}from"./vendor-nTk4yJ7I.js";function n(...n){return e(t(n))}var r=`/api/v1`.replace(/\/api\/v1\/?$/,``),i=e=>e?e.startsWith(`http`)||e.startsWith(`data:`)?e:e.startsWith(`/`)?`${r}${e}`:`${r}/${e}`:``;export{i as n,n as t};

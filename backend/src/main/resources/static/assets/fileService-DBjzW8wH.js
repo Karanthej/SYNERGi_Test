@@ -1,0 +1,1 @@
+import{D as e}from"./index-B9roqWDp.js";var t={uploadFile:async t=>{let n=new FormData;return n.append(`file`,t),(await e.post(`/files/upload`,n)).data.data.url}};export{t};

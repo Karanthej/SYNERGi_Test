@@ -1,0 +1,1 @@
+import{S as e,b as t}from"./vendor-DEANsvSv.js";function n(...n){return t(e(n))}var r=`/api/v1`.replace(/\/api\/v1\/?$/,``),i=e=>e?e.startsWith(`http`)||e.startsWith(`data:`)?e:e.startsWith(`/`)?`${r}${e}`:`${r}/${e}`:``;export{i as n,n as t};

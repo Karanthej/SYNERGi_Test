@@ -1,1 +1,0 @@
-import{y as e}from"./index-B4VCbxCc.js";var t={getStartupApplications:async(t,n=0,r=20)=>(await e.get(`/founder/startups/${t}/applications`,{params:{page:n,size:r}})).data.data,getApplicationDetails:async t=>(await e.get(`/founder/applications/${t}`)).data.data,updateApplicationStatus:async(t,n)=>{await e.put(`/founder/applications/${t}/status?status=${n}`)}};export{t};
