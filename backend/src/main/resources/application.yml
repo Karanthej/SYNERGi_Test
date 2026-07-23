@@ -67,8 +67,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${CLERK_ISSUER_URI:https://steady-weevil-73.clerk.accounts.dev}
-          jwk-set-uri: ${CLERK_JWK_SET_URI:https://steady-weevil-73.clerk.accounts.dev/.well-known/jwks.json}
+          issuer-uri: ${CLERK_ISSUER_URI:https://social-bat-68.clerk.accounts.dev}
+          jwk-set-uri: ${CLERK_JWK_SET_URI:https://social-bat-68.clerk.accounts.dev/.well-known/jwks.json}
 
 # ── Clerk ─────────────────────────────────────────────────────────────────────
 clerk:
