@@ -103,7 +103,16 @@ export default function LoginForm({ onSwitchMode }: LoginFormProps) {
       } else {
          console.log("Unhandled Clerk Status:", result);
          if (result.status === "needs_second_factor") {
-           setServerError("Clerk is blocking your login because Multi-Factor Authentication is still turned ON in your Clerk Dashboard. You MUST turn it off there first.");
+           const totpFactor = result.supportedSecondFactors?.find((f: any) => f.strategy === "totp");
+           const phoneFactor = result.supportedSecondFactors?.find((f: any) => f.strategy === "phone_code");
+           
+           const strategy = totpFactor ? "totp" : phoneFactor ? "phone_code" : null;
+           
+           if (strategy) {
+             navigate("/otp-verification", { state: { email: data.email, type: "login_mfa", strategy } });
+           } else {
+             setServerError("Multi-Factor Authentication is required but no supported methods were found on this account.");
+           }
          } else {
            setServerError(`Unexpected login status: ${result.status}. Please check Clerk configuration.`);
          }
