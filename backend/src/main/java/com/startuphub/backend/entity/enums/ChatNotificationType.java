@@ -1,0 +1,28 @@
+package com.startuphub.backend.entity.enums;
+
+public enum ChatNotificationType {
+    NEW_MESSAGE,
+    MENTION,
+    REPLY,
+    REACTION,
+    VOICE_NOTE,
+    IMAGE,
+    DOCUMENT,
+    MEMBER_ADDED,
+    MEMBER_REMOVED,
+    GROUP_CREATED,
+    GROUP_RENAMED,
+    GROUP_DELETED,
+    CALL_INVITATION,
+    MISSED_CALL,
+    
+    // System Activity Types
+    JOB_OFFER_SENT,
+    JOB_OFFER_ACCEPTED,
+    JOB_OFFER_REJECTED,
+    APPLICATION_ACCEPTED,
+    APPLICATION_REJECTED,
+    APPLICATION_WITHDRAWN,
+    WORKSPACE_JOINED,
+    WORKSPACE_LEFT
+}

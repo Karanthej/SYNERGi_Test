@@ -1,0 +1,112 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# application-prod.yml  —  Production profile (Neon PostgreSQL)
+#
+# Activated with:  -Dspring.profiles.active=prod
+# All credentials are injected via environment variables — no hardcoded values.
+# ─────────────────────────────────────────────────────────────────────────────
+
+spring:
+
+  # ── DataSource (Neon PostgreSQL) ────────────────────────────────────────────
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+    # ── HikariCP — tuned for Neon serverless PostgreSQL ─────────────────────
+    # Neon suspends idle compute after 5 minutes; keep pool tight to avoid
+    # holding connections that Neon has already dropped server-side.
+    hikari:
+      pool-name: StartupHubNeonPool
+      # Neon's free tier allows ~100 concurrent connections per branch;
+      # keep this conservative to share headroom across deployments.
+      maximum-pool-size: 10
+      minimum-idle: 2
+      # Time to wait for a connection from the pool (30 s).
+      connection-timeout: 30000
+      # Drop idle connections after 10 minutes (Neon suspends after 5 min idle).
+      idle-timeout: 600000
+      # Recycle connections every 30 minutes to avoid stale-connection errors
+      # after Neon compute resumes from suspension.
+      max-lifetime: 1800000
+      # Validate connection health before handing it to the application.
+      connection-test-query: SELECT 1
+      # Keep-alive ping every 2 minutes so Neon does not suspend mid-session.
+      keepalive-time: 120000
+      # Additional JDBC properties for SSL and connection behaviour.
+      data-source-properties:
+        sslmode: require
+        # Disable prepared-statement caching — Neon's connection pooler (pgBouncer)
+        # operates in transaction mode and does not preserve server-side prepared
+        # statements across transactions.
+        prepareThreshold: 0
+        reWriteBatchedInserts: true
+        socketTimeout: 60
+        connectTimeout: 10
+
+  # ── JPA / Hibernate ─────────────────────────────────────────────────────────
+  jpa:
+    hibernate:
+      # 'validate' confirms the schema matches entities without altering tables.
+      # Schema changes must be applied via explicit SQL migrations.
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        # Batch DML for improved insert/update throughput.
+        jdbc:
+          batch_size: 25
+          order_inserts: true
+          order_updates: true
+        # Efficient second-level cache fetch strategy.
+        query:
+          fail_on_pagination_over_collection_fetch: false
+
+  # ── Response compression ─────────────────────────────────────────────────────
+  web:
+    resources:
+      cache:
+        period: 31536000
+
+# ── Server ────────────────────────────────────────────────────────────────────
+server:
+  port: ${PORT:8080}
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+
+# ── JWT ───────────────────────────────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# ── OpenAI ────────────────────────────────────────────────────────────────────
+openai:
+  api:
+    key: ${OPENAI_API_KEY:}
+
+# ── Actuator (health, metrics, info only) ────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    db:
+      enabled: true
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging:
+  level:
+    root: WARN
+    com.startuphub.backend: INFO
+    com.zaxxer.hikari: INFO

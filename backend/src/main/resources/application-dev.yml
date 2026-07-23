@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# application-dev.yml  —  Development profile (local PostgreSQL)
+#
+# Activated with:  -Dspring.profiles.active=dev
+# Local developers NEVER need Neon credentials.
+# ─────────────────────────────────────────────────────────────────────────────
+
+spring:
+
+  # ── DataSource (local PostgreSQL) ────────────────────────────────────────────
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/startuphub}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: StartupHubDevPool
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ── JPA / Hibernate ─────────────────────────────────────────────────────────
+  jpa:
+    hibernate:
+      # 'update' is acceptable in local dev — schema evolves with entities.
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+
+# ── Logging (more verbose in dev) ────────────────────────────────────────────
+logging:
+  level:
+    root: INFO
+    org.springframework.security: DEBUG
+    com.startuphub.backend: DEBUG
+    com.zaxxer.hikari: INFO

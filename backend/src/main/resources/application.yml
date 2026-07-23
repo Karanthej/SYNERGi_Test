@@ -1,0 +1,105 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# application.yml  —  Shared base configuration
+#
+# This file contains settings common to ALL profiles.
+# Profile-specific overrides live in:
+#   application-dev.yml   (local PostgreSQL)
+#   application-prod.yml  (Neon PostgreSQL, SSL, production tuning)
+#
+# Default active profile: dev (safe for local development)
+# ─────────────────────────────────────────────────────────────────────────────
+
+spring:
+  application:
+    name: startup-hub-backend
+
+  profiles:
+    default: dev
+
+  mvc:
+    throw-exception-if-no-handler-found: false
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+  web:
+    resources:
+      add-mappings: true
+
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 15MB
+
+  # ── DataSource base (overridden per profile) ──────────────────────────────
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/startuphub}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: StartupHubHikariPool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ── JPA base (overridden per profile) ────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  # ── Security / OAuth2 ─────────────────────────────────────────────────────
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${CLERK_ISSUER_URI:https://steady-weevil-73.clerk.accounts.dev}
+          jwk-set-uri: ${CLERK_JWK_SET_URI:https://steady-weevil-73.clerk.accounts.dev/.well-known/jwks.json}
+
+# ── Clerk ─────────────────────────────────────────────────────────────────────
+clerk:
+  webhook:
+    secret: ${CLERK_WEBHOOK_SECRET:whsec_secret}
+
+# ── JWT ───────────────────────────────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# ── OTP ───────────────────────────────────────────────────────────────────────
+app:
+  otp:
+    expiry-minutes: ${OTP_EXPIRY:10}
+    max-attempts: ${OTP_MAX_ATTEMPTS:3}
+    retention-days: ${OTP_RETENTION_DAYS:1}
+
+# ── Server ────────────────────────────────────────────────────────────────────
+server:
+  port: ${PORT:1026}
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging:
+  level:
+    root: INFO
+    org.springframework.security: DEBUG
+    com.startuphub.backend: INFO
+
+# ── OpenAI ────────────────────────────────────────────────────────────────────
+openai:
+  api:
+    key: ${OPENAI_API_KEY:}

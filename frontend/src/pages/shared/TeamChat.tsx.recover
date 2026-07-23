@@ -1,0 +1,258 @@
+Created At: 2026-07-13T09:29:00Z
+Completed At: 2026-07-13T09:29:00Z
+File Path: `file:///k:/startup/frontend/src/pages/shared/TeamChat.tsx`
+Total Lines: 1780
+Total Bytes: 93993
+Showing lines 1 to 250
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+2: import { useParams, useLocation, useNavigate, useOutletContext } from 'react-router-dom';
+3: import { useAuthStore } from '@/store/useAuthStore';
+4: import { chatService, type ChatRoomResponse, type ChatMemberResponse, type ChatMessageResponse, type AttachmentResponse } from '@/services/chatService';
+5: import { useChatStore } from '@/store/useChatStore';
+6: import { useWebSocket } from '@/hooks/useWebSocket';
+7: import { 
+8:   Send, Paperclip, X, Search, Hash, Maximize, Minimize, ArrowLeft, ArrowRight, 
+9:   Users, Settings, Image as ImageIcon, FileText, Download, Star, Phone, Mic, Image, MessageSquare,
+10:   Check, CheckCheck, Trash2, Edit2, Reply,
+11:   Pin, Circle, Loader2, Plus, FileIcon, AlertCircle, UploadCloud
+12: } from 'lucide-react';
+13: import { apiClient as api } from '@/lib/apiClient';
+14: import { getImageUrl, SERVER_BASE } from '@/lib/utils';
+15: import { toast } from 'sonner';
+16: import { motion, AnimatePresence } from 'framer-motion';
+17: import { VoiceNoteRecorder } from '@/components/chat/VoiceNoteRecorder';
+18: import { VoiceNotePlayer } from '@/components/chat/VoiceNotePlayer';
+19: import {} from '@/components/chat/VoiceNotePlayer';
+20: import { useCallStore } from '@/store/useCallStore';
+21: import { CallOverlay } from '@/components/chat/CallOverlay';
+22: import {} from '@/lib/animations';
+23: 
+24: const EMOJI_OPTIONS = ['👍', '❤️', '😂', '🎉', '🚀', '👏', '😍', '😢', '😮'];
+25: 
+26: const EMPTY_ARRAY: any[] = [];
+27: 
+28: const formatChatDate = (dateString: string) => {
+29:   const d = new Date(dateString);
+30:   const now = new Date();
+31:   const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+32:   
+33:   const yesterday = new Date(now);
+34:   yesterday.setDate(yesterday.getDate() - 1);
+35:   const isYesterday = d.getDate() === yesterday.getDate() && d.getMonth() === yesterday.getMonth() && d.getFullYear() === yesterday.getFullYear();
+36: 
+37:   if (isToday) return 'Today';
+38:   if (isYesterday) return 'Yesterday';
+39:   return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+40: };
+41: 
+42: const formatChatTime = (dateString: string, includeRelative = false) => {
+43:   const d = new Date(dateString);
+44:   const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+45:   if (includeRelative) {
+46:     const rel = formatChatDate(dateString);
+47:     if (rel !== 'Today') return `${rel} • ${timeStr}`;
+48:   }
+49:   return timeStr;
+50: };
+51: 
+52: 
+53: const ReplyPreviewBlock = React.memo(({ 
+54:   replyToMessageUuid, 
+55:   replyToSenderName, 
+56:   replyToContent, 
+57:   roomMessages, 
+58:   isMe, 
+59:   onScrollTo, 
+60:   inBubble = false,
+61:   accessToken
+62: }: {
+63:   replyToMessageUuid: string;
+64:   replyToSenderName?: string;
+65:   replyToContent?: string;
+66:   roomMessages: any[];
+67:   isMe: boolean;
+68:   onScrollTo?: (uuid: string) => void;
+69:   inBubble?: boolean;
+70:   accessToken?: string | null;
+71: }) => {
+72:   const repliedMsg = roomMessages.find(m => m.uuid === replyToMessageUuid);
+73:   
+74:   let type = 'text';
+75:   let previewText = repliedMsg ? repliedMsg.content : replyToContent;
+76:   let thumbnailUrl = null;
+77: 
+78:   if (repliedMsg) {
+79:     if (repliedMsg.isVoiceNote) {
+80:       type = 'voice';
+81:       previewText = 'Voice message' + (repliedMsg.voiceNoteDuration ? ` (${Math.floor(repliedMsg.voiceNoteDuration)}s)` : '');
+82:     } else if (repliedMsg.attachments && repliedMsg.attachments.length > 0) {
+83:       const firstAtt = repliedMsg.attachments[0];
+84:       if (firstAtt.fileType.startsWith('image/')) {
+85:         type = 'image';
+86:         previewText = previewText || 'Photo';
+87:         thumbnailUrl = `${SERVER_BASE}${firstAtt.fileUrl}?access_token=${accessToken}`;
+88:       } else {
+89:         type = 'file';
+90:         previewText = previewText || firstAtt.fileName;
+91:       }
+92:     }
+93:   }
+94: 
+95:   const containerClass = inBubble 
+96:     ? (isMe 
+97:         ? "bg-white/10 hover:bg-white/20 border-l-4 border-[#a78bfa] text-white/90" 
+98:         : "glass-surface hover:glass-surface dark:hover:bg-white/5 border-l-4 border-indigo-500 text-muted-foreground"
+99:       )
+100:     : "glass-surface/80 border-l-4 border-indigo-500 text-muted-foreground";
+101: 
+102:   const nameClass = inBubble 
+103:     ? (isMe ? "text-white font-bold" : "text-primary dark:text-primary font-bold")
+104:     : "text-primary dark:text-primary font-bold";
+105: 
+106:   return (
+107:     <div 
+108:       onClick={() => onScrollTo && onScrollTo(replyToMessageUuid)}
+109:       className={`flex items-stretch justify-between rounded-md p-2 mb-2 cursor-pointer transition-colors ${containerClass} w-full min-w-0 sm:min-w-[200px]`}
+110:     >
+111:       <div className="flex flex-col min-w-0 pr-4 flex-1">
+112:         <span className={`text-xs ${nameClass} mb-0.5`}>
+113:           {replyToSenderName || (repliedMsg ? repliedMsg.senderName : 'Reply')}
+114:         </span>
+115:         <div className="flex items-center text-xs truncate opacity-90">
+116:           {type === 'voice' && <Mic className="w-3.5 h-3.5 mr-1 flex-shrink-0" />}
+117:           {type === 'image' && <Image className="w-3.5 h-3.5 mr-1 flex-shrink-0" />}
+118:           {type === 'file' && <FileText className="w-3.5 h-3.5 mr-1 flex-shrink-0" />}
+119:           <span className="truncate">{previewText?.substring(0, 50) || ''}</span>
+120:         </div>
+121:       </div>
+122:       {thumbnailUrl && (
+123:         <div className="flex-shrink-0 w-10 h-10 rounded overflow-hidden ml-2 /5">
+124:           <img src={thumbnailUrl} alt="thumbnail" className="w-full h-full object-cover" />
+125:         </div>
+126:       )}
+127:     </div>
+128:   );
+129: });
+130: 
+131: 
+132: // Removed formatFileSize import
+133: 
+134: const ChatMessageItem = React.memo(({
+135:   msg,
+136:   isMe,
+137:   showHeader,
+138:   isReadByAll,
+139:   isContextMenuOpen,
+140:   wsMember,
+141:   repliedMsg,
+142:   activeRoom,
+143:   userUuid,
+144:   accessToken,
+145:   setContextMenu,
+146:   setSelectedProfile,
+147:   setReplyMessageId,
+148:   reactMessage,
+149:   downloadFile,
+150:   handleScrollToMessage,
+151:   SERVER_BASE,
+152:   getImageUrl,
+153:   formatChatTime,
+154:   formatFileSize
+155: }: any) => {
+156:   return (
+157:     <motion.div 
+158:       initial={{ opacity: 0, y: 10, scale: 0.98 }}
+159:       animate="visible"
+160:       id={`msg-${msg.uuid}`} 
+161:       onContextMenu={(e) => {
+162:         e.preventDefault();
+163:         if (msg.isDeleted) return;
+164:         setContextMenu({ x: e.clientX, y: e.clientY, messageUuid: msg.uuid });
+165:       }}
+166:       className={`flex mb-2 group ${isMe ? 'justify-end' : 'justify-start'} ${isContextMenuOpen ? 'glass-surface rounded-lg p-2 -mx-2' : ''}`}
+167:     >
+168:     {!isMe && showHeader && (
+169:       <div 
+170:         className="flex-shrink-0 mr-3 mt-1 cursor-pointer"
+171:         onClick={() => {
+172:           setSelectedProfile(wsMember || {
+173:             userUuid: msg.senderUuid,
+174:             fullName: msg.senderName,
+175:             username: msg.senderUsername,
+176:             avatarUrl: msg.senderAvatarUrl,
+177:             role: msg.senderRole
+178:           });
+179:         }}
+180:       >
+181:         {msg.senderAvatarUrl ? (
+182:           <img src={getImageUrl(msg.senderAvatarUrl)} alt={msg.senderName} className="w-8 h-8 rounded-full object-cover" />
+183:         ) : (
+184:           <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center font-medium text-xs">{msg.senderName.charAt(0)}</div>
+185:         )}
+186:       </div>
+187:     )}
+188:     {!isMe && !showHeader && <div className="w-11 flex-shrink-0 mr-3"></div>}
+189: 
+190:     <div className={`flex flex-col max-w-[85%] sm:max-w-[75%] min-w-0 ${isMe ? 'items-end' : 'items-start'} relative`}>
+191:       
+192:       {showHeader && !isMe && (
+193:         <div className="flex items-baseline mb-1 ml-1 space-x-2">
+194:           <span 
+195:             className="text-sm font-semibold text-foreground cursor-pointer hover:underline"
+196:             onClick={() => {
+197:               setSelectedProfile(wsMember || {
+198:                 userUuid: msg.senderUuid,
+199:                 fullName: msg.senderName,
+200:                 username: msg.senderUsername,
+201:                 avatarUrl: msg.senderAvatarUrl,
+202:                 role: msg.senderRole
+203:               });
+204:             }}
+205:           >
+206:             {msg.senderName} {msg.senderUsername && <span className="text-muted-foreground font-normal">@{msg.senderUsername}</span>}
+207:           </span>
+208:           {msg.senderRole && activeRoom?.type !== 'PRIVATE' && <span className="text-[9px] uppercase font-bold tracking-wider text-primary bg-primary/15 px-1.5 py-0.5 rounded ml-2">{msg.senderRole.replace('_', ' ')}</span>}
+209:           <span className="text-[11px] text-muted-foreground">{formatChatTime(msg.createdAt)}</span>
+210:         </div>
+211:       )}
+212:       {isMe && (
+213:         <div className="flex justify-end mb-1 text-[11px] text-muted-foreground items-center">
+214:           <span>{formatChatTime(msg.createdAt)}</span>
+215:           {isReadByAll ? (
+216:             <CheckCheck className={`w-3.5 h-3.5 ml-1 ${msg.isDeleted ? 'text-muted-foreground' : 'text-blue-500'}`} />
+217:           ) : (
+218:             <CheckCheck className="w-3.5 h-3.5 ml-1 text-gray-400" />
+219:           )}
+220:         </div>
+221:       )}
+222:       <div className="relative" onDoubleClick={() => setReplyMessageId(msg.uuid)}>
+223:         
+224:         {msg.replyToMessageUuid && msg.isVoiceNote && (
+225:           <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+226:             <div className={`max-w-[75%] min-w-0 sm:min-w-[200px] w-auto ${isMe ? 'ml-auto' : 'mr-auto'} mb-1`}>
+227:               <ReplyPreviewBlock 
+228:                 replyToMessageUuid={msg.replyToMessageUuid}
+229:                 replyToSenderName={msg.replyToSenderName}
+230:                 replyToContent={msg.replyToContent}
+231:                 roomMessages={repliedMsg ? [repliedMsg] : []}
+232:                 isMe={isMe}
+233:                 onScrollTo={handleScrollToMessage}
+234:                 inBubble={false}
+235:                 accessToken={accessToken}
+236:               />
+237:             </div>
+238:           </div>
+239:         )}
+240:         {msg.isVoiceNote && !msg.isDeleted && msg.attachments && msg.attachments.length > 0 ? (
+241:           <div className={`mb-2 ${isMe ? 'flex justify-end' : 'flex justify-start'}`}>
+242:             <VoiceNotePlayer 
+243:               audioUrl={`${SERVER_BASE}${msg.attachments[0].fileUrl}?access_token=${accessToken}`}
+244:               duration={msg.voiceNoteDuration}
+245:               waveform={msg.voiceNoteWaveform}
+246:               isMyMessage={isMe}
+247:             />
+248:           </div>
+249:         ) : (
+250:           <>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
